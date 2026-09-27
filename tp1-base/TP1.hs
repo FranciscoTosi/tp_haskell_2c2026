@@ -49,8 +49,8 @@ cajaNada = Caja Nada
 -- 1: recCircuito
 recCircuito ::
     (Caja -> b) ->
-    (Circuito -> Circuito -> b -> b -> b) ->
-    (Circuito -> Circuito -> Caja -> b -> b -> Caja -> b) ->
+    (Circuito -> b -> Circuito -> b -> b) ->
+    (Caja -> Circuito -> b -> Circuito -> b -> Caja -> b) ->
     Circuito ->
     b
 recCircuito cCaja cSerie cParalelo c =
@@ -69,77 +69,39 @@ foldCircuito ::
     (Caja -> b -> b -> Caja -> b) ->
     Circuito ->
     b
-foldCircuito cCaja cSerie cParalelo = recCircuito cCaja (const.const$cSerie) (const.const$cParalelo)
+foldCircuito cCaja cSerie cParalelo =
+    recCircuito
+        cCaja
+        (\_ circuitoInicial _ circuitoFinal -> cSerie circuitoInicial circuitoFinal)
+        (\cajaEntrada _ circuitoIzquierdo _ circuitoDerecho cajaSalida -> cParalelo cajaEntrada circuitoIzquierdo circuitoDerecho cajaSalida)
 
 -- 3 invertido
-invertido :: Circuito -> Circuito
-invertido = foldCircuito Caja (flip$Serie) paraleloInvertido
-    where
-        paraleloInvertido cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida = Paralelo cajaSalida resultadoDerecho resultadoIzquierdo cajaEntrada
+
+invertido = undefined -- TODO: COMPLETAR
 
 -- 4: hayCaminoIluminado
 
-hayCaminoIluminado :: Circuito -> Bool
-hayCaminoIluminado = foldCircuito cCaja (&&) cParalelo
-  where
-    cCaja (Bombilla True) = True
-    cCaja _               = False
-    cParalelo cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida =
-      cCaja cajaEntrada && (resultadoIzquierdo || resultadoDerecho) && cCaja cajaSalida
+hayCaminoIluminado = undefined -- TODO: COMPLETAR
 
 -- 5: cantidadPrendidas
 
-cantidadPrendidas :: Circuito -> Int
-cantidadPrendidas = foldCircuito cCaja (+) cParalelo
-  where
-    cCaja (Bombilla True) = 1
-    cCaja _               = 0
-    cParalelo cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida =
-      cCaja cajaEntrada + resultadoIzquierdo + resultadoDerecho + cCaja cajaSalida
+cantidadPrendidas = undefined -- TODO: COMPLETAR
 
 -- 6: cajasDeCircuito
 
-cajasDeCircuito :: Circuito -> [Caja]
-cajasDeCircuito = foldCircuito cCaja (++) cParalelo
-  where
-    cCaja c = [c]
-    cParalelo cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida =
-      [cajaEntrada] ++ resultadoIzquierdo ++ resultadoDerecho ++ [cajaSalida]
+cajasDeCircuito = undefined -- TODO: COMPLETAR
 
 -- 7: esCircuitoProlijo
 
-esCircuitoProlijo :: Circuito -> Bool
-esCircuitoProlijo = recCircuito (const$True) cSerie cParalelo
-  where
-    cSerie _ (Serie _ _) _ _ = False
-    cSerie _ _ resultadoInicial resultadoFinal = resultadoInicial && resultadoFinal
-    cParalelo _ _ _ resultadoIzquierdo resultadoDerecho _ = resultadoIzquierdo && resultadoDerecho
+esCircuitoProlijo = undefined -- TODO: COMPLETAR
 
 -- 8: circuitoEmprolijado
 
-circuitoEmprolijado :: Circuito -> Circuito
-circuitoEmprolijado = foldCircuito Caja cSerie Paralelo
-  where
-    cSerie resultadoInicial resultadoFinal = serieRotada resultadoInicial resultadoFinal
-    serieRotada circuitoInicial (Serie circuitoIzquierdo circuitoDerecho) =
-      serieRotada (serieRotada circuitoInicial circuitoIzquierdo) circuitoDerecho
-    serieRotada circuitoInicial circuitoFinal = Serie circuitoInicial circuitoFinal
+circuitoEmprolijado = undefined -- TODO: COMPLETAR
 
 -- 9: tienenLaMismaEstructura
 
-tienenLaMismaEstructura :: Circuito -> Circuito -> Bool
-tienenLaMismaEstructura = foldCircuito cCaja cSerie cParalelo
-  where
-    cCaja _ (Caja _) = True
-    cCaja _ _        = False
-
-    cSerie resultadoInicial resultadoFinal (Serie circuitoInicial2 circuitoFinal2) =
-      resultadoInicial circuitoInicial2 && resultadoFinal circuitoFinal2
-    cSerie _ _ _ = False
-
-    cParalelo _ resultadoIzquierdo resultadoDerecho _ (Paralelo _ circuitoIzquierdo2 circuitoDerecho2 _) =
-      resultadoIzquierdo circuitoIzquierdo2 && resultadoDerecho circuitoDerecho2
-    cParalelo _ _ _ _ _ = False
+tienenLaMismaEstructura = undefined -- TODO: COMPLETAR
 
 -- 10: subCircuitoMásResistente
 
@@ -152,18 +114,6 @@ resistenciaCircuito = foldCircuito cCaja cSerie cParalelo
     cSerie resultadoInicial resultadoFinal = resultadoInicial + resultadoFinal
     cParalelo cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida =
       cCaja cajaEntrada + 1/(1/resultadoIzquierdo + 1/resultadoDerecho) + cCaja cajaSalida
-
-circuitoMásResistente :: Circuito -> Circuito -> Circuito
-circuitoMásResistente circuito1 circuito2 = if resistenciaCircuito circuito1 >= resistenciaCircuito circuito2
-  then circuito1 else circuito2
-
-subCircuitoMásResistente :: Circuito -> Circuito
-subCircuitoMásResistente = recCircuito Caja cSerie cParalelo
-  where
-    cSerie circuitoInicial circuitoFinal resultadoInicial resultadoFinal =
-      circuitoMásResistente (Serie circuitoInicial circuitoFinal) (circuitoMásResistente resultadoInicial resultadoFinal)
-    cParalelo circuitoDerecho circuitoIzquierdo cajaEntrada resultadoIzquierdo resultadoDerecho cajaSalida =
-      circuitoMásResistente (Paralelo cajaEntrada circuitoIzquierdo circuitoDerecho cajaSalida) (circuitoMásResistente resultadoIzquierdo resultadoDerecho)
 
 {-- 11: Demostrar: alternado . alternado = id
 
@@ -187,108 +137,6 @@ not :: Bool -> Bool
 {NT} not True = False
 {NF} not False = True
 
-{AUX} cajaAlternada (cajaAlternada caja) = caja
-
-demostración de {AUX}
-cajaAlternada (cajaAlternada caja) = caja
-
-lema de generación de Caja: casos Nada, Bombilla b
-
-caso caja = Nada:
-cajaAlternada (cajaAlternada Nada) = Nada
-{CAN}
-cajaAlternada Nada = Nada
-{CAN}
-Nada = Nada
-
-caso caja = Bombilla b:
-cajaAlternada (cajaAlternada (Bombilla b)) = Bombilla b
-{CAB}
-cajaAlternada (Bombilla not b) = Bombilla b
-
-Lema de generación sobre booleanos: casos True, Flase
-
-caso b = True:
-cajaAlternada (Bombilla not True) = Bombilla True
-{NT}
-cajaAlternada (Bombilla False) = Bombilla True
-{CAB}
-Bombilla not False = Bombilla True
-{NF}
-Bombilla True = Bombilla True
-
-caso b = False:
-cajaAlternada (Bombilla not False) = Bombilla False
-{NF}
-cajaAlternada (Bombilla True) = Bombilla False
-{CAB}
-Bombilla not True = Bombilla False
-{NT}
-Bombilla False = Bombilla False
-
-
---
-qvq parat todo circ::Circuito: alternado . alternado circ = id circ
-P(circ) = alternado . alternado circ = id circ
-{EXT}
-alterando.alternado circ = id circ
-
-Inducción sobre Circuito
-Lema de generacion de Circuito: casos Caja, Serie, Paralelo
-
-P(Caja caja)
-P(circ) => P(Serie ci cf)
-P(circ) => p(Paralelo ce ci cd cs)
-
-{HI} P(Circ)
-
-Caso base P(Caja caja)
-alterando.alternado (Caja caja) = id (Caja caja)
-{C}
-alternado (alternado (Caja caja)) = id (Caja caja)
-{AC}
-alternado (Caja (cajaAlternada caja)) = id (Caja caja)
-{AC}
-Caja (cajaAlternada (cajaAlternada caja)) = id (Caja caja)
-{AUX}
-Caja caja = id (Caja caja)
-{I}
-id (Caja caja) = id (Caja caja)
-
-caso P(Serie ci cf)
-alterando.alternado (Serie ci cf) = id (Serie ci cf)
-{C}
-alternado (alternado (Serie ci cf)) = id (Serie ci cf)
-{AS}
-alternado (Serie (alternado ci) (alternado cf)) = id (Serie ci cf)
-{AS}
-Serie (alternado (alternado ci)) (alternado (alternado cf)) = id (Serie ci cf)
-{C}x2
-Serie (alternado.alternado ci) (alternado.alternado cf) = id (Serie ci cf)
-{HI}
-Serie (id ci) (id cf) = id (Serie ci cf)
-{I}x2
-Serie ci cf = id (Serie ci cf)
-{I}
-id (Serie ci cf) = id (Serie ci cf)
-
-caso P(Paralelo ce ci cd cs):
-alterando.alternado (Paralelo ce ci cd cs)) = id (Paralelo ce ci cd cs)
-{C}
-alternado (alternado (Paralelo ce ci cd cs)) = id (Paralelo ce ci cd cs)
-{AP}
-alternado (Paralelo (cajaAlternada ce) (alternado ci) (alternado cd) (cajaAlternada cs)) = id (Paralelo ce ci cd cs)
-{AP}
-Paralelo (cajaAlternada (cajaAlternada ce)) (alternado (alternado ci)) (alternado (alternado cd)) (cajaAlternada (cajaAlternada cs)) = id (Paralelo ce ci cd cs)
-{C}x2
-Paralelo (cajaAlternada (cajaAlternada ce)) (alternado.alternado ci) (alternado.alternado cd) (cajaAlternada (cajaAlternada cs)) = id (Paralelo ce ci cd cs)
-{HI}
-Paraleo (cajaAlternada (cajaAlternada ce)) (id ci) (id cd) (cajaAlternada (cajaAlternada cs)) = id (Paralelo ce ci cd cs)
-{I}x2
-Paraleo (cajaAlternada (cajaAlternada ce)) ci cd (cajaAlternada (cajaAlternada cs)) = id (Paralelo ce ci cd cs)
-{AUX}x2
-Paralelo ce ci cd cs = id (Paralelo ce ci cd cs)
-{I}
-id (Paralelo ce ci cd cs) = id (Paralelo ce ci cd cs)
+-- TODO: COMPLETAR
 
 --}
